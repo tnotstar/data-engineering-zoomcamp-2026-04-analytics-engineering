@@ -92,3 +92,16 @@ models:
         description: Total amount charged to passengers (does not include cash tips)
       - name: payment_type
         description: Payment method code (1=Credit card, 2=Cash, 3=No charge, 4=Dispute, 5=Unknown, 6=Voided)
+
+  - name: stg_fhv_tripdata
+    description: >
+      Staging model for fhs taxi trip data. This model standardizes column names
+      and data types from the raw fhs_tripdata source, providing a clean foundation
+      for downstream transformations.
+    columns:
+      - name: revenue_zone
+      - name: pickup_datetime
+      - name: dropoff_datetime
+      - name: pickup_location_id
+      - name: dropoff_location_id
+      - name: sr_flag

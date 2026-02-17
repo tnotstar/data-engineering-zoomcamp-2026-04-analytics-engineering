@@ -38,10 +38,10 @@ If you run `dbt run --select int_trips_unioned`, what models will be built?
 >
 > Explanation: In dbt, the command dbt run --select model_name selects only that specific model.
 >
->    To include upstream dependencies (the parents), you would use dbt run --select +int_trips_unioned.
+> To include upstream dependencies (the parents), you would use dbt run --select +int_trips_unioned.
 >
->    To include downstream dependencies (the children), you would use dbt run --select int_trips_unioned+.
->    Since no operators (+) were used, only the specified model is built.
+> To include downstream dependencies (the children), you would use dbt run --select int_trips_unioned+.
+> Since no operators (+) were used, only the specified model is built.
 
 ---
 
@@ -71,7 +71,6 @@ What happens when you run `dbt test --select fct_trips`?
 > **Answer:** dbt will fail the test, returning a non-zero exit code
 >
 > Explanation: The accepted_values test is a "schema test" (or generic test) that runs a query to check if any records in the column fall outside the defined list. Since 6 is not in [1, 2, 3, 4, 5], the test will find failing records and return a failure status. dbt tests do not automatically update configurations based on new data.
->
 
 ---
 
@@ -86,14 +85,14 @@ What is the count of records in the `fct_monthly_zone_revenue` model?
 - 12,184
 - 15,421
 
-> **Answer:** 12,998
+> **Answer:** 12,184
 >
 > Explanation: After running the full pipeline (dbt build), you can query the final fact table in your data warehouse (BigQuery, PostgreSQL, etc.):
 
 ```sql
-SELECT count(*) FROM `your_project.your_schema.fct_monthly_zone_revenue`;
+SELECT count(*) FROM prod.fct_monthly_zone_revenue;
 ```
->
+
 > **Note:** This count is based on the standardized 2019-2020 Green and Yellow taxi datasets provided in the course.
 
 ---
@@ -109,21 +108,22 @@ Which zone had the highest revenue?
 - East Harlem South
 - Washington Heights South
 
-> **Answer:** East Harlem North
+> **Answer:** East Harlem North (1,817,240.750)
 >
 > Explanation: You can find this by filtering the revenue table for the year 2020 and the 'Green' service type:
-SQL
+> SQL
 
 ```sql
 SELECT
-    zone,
+    pickup_zone,
     SUM(revenue_monthly_total_amount) as total_revenue
-FROM `your_project.your_schema.fct_monthly_zone_revenue`
-WHERE year = 2020 AND service_type = 'Green'
+FROM prod.fct_monthly_zone_revenue
+WHERE year(revenue_month) = 2020 AND service_type = 'Green'
 GROUP BY 1
 ORDER BY total_revenue DESC
 LIMIT 1;
 ```
+
 ---
 
 ### Question 5. Green Taxi Trip Counts (October 2019)
@@ -138,16 +138,17 @@ Using the `fct_monthly_zone_revenue` table, what is the **total number of trips*
 > **Answer:** 384,624
 >
 > Explanation: Run a sum of the total_monthly_trips for the specific month and service type:
-SQL
+> SQL
 
 ```sql
 SELECT
     SUM(total_monthly_trips)
-FROM `your_project.your_schema.fct_monthly_zone_revenue`
-WHERE year = 2019
-  AND month = 10
+FROM prod.fct_monthly_zone_revenue
+WHERE year(revenue_month) = 2019
+  AND month(revenue_month) = 10
   AND service_type = 'Green';
 ```
+
 ---
 
 ### Question 6. Build a Staging Model for FHV Data
@@ -184,7 +185,11 @@ from {{ source('staging', 'fhv_tripdata') }}
 where dispatching_base_num is not null
 ```
 
-> Running a count(*) on the resulting table/view for the full year 2019 yields 43,244,693.
+> Running a count(\*) on the resulting table/view for the full year 2019 yields 43,244,693.
+
+```sql
+select count(*) from prod.stg_fhv_tripdata;
+```
 
 ---
 

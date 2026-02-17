@@ -14,8 +14,8 @@ sources:
         prod
       {%- endif -%}
     freshness:
-      warn_after: {count: 24, period: hour}
-      error_after: {count: 48, period: hour}
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
     tables:
       - name: green_tripdata
         description: Raw green taxi trip records
@@ -98,3 +98,19 @@ sources:
             description: Improvement surcharge
           - name: total_amount
             description: Total amount charged
+
+      - name: fhv_tripdata
+        description: Raw fhv taxi trip records
+        loaded_at_field: tpep_pickup_datetime
+        columns:
+          - name: dispatching_base_num
+          - name: pickup_datetime
+            description: Date and time when the meter was engaged
+          - name: dropOff_datetime
+            description: Date and time when the meter was disengaged
+          - name: PUlocationID
+            description: TLC Taxi Zone where the meter was engaged
+          - name: DOlocationID
+            description: Date and time when the meter was disengaged
+          - name: SR_Flag
+          - name: Affiliated_base_number
