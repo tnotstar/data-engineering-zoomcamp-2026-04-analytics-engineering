@@ -68,6 +68,11 @@ What happens when you run `dbt test --select fct_trips`?
 - dbt will pass the test with a warning about the new value
 - dbt will update the configuration to include the new value
 
+> **Answer:** dbt will fail the test, returning a non-zero exit code
+>
+> Explanation: The accepted_values test is a "schema test" (or generic test) that runs a query to check if any records in the column fall outside the defined list. Since 6 is not in [1, 2, 3, 4, 5], the test will find failing records and return a failure status. dbt tests do not automatically update configurations based on new data.
+>
+
 ---
 
 ### Question 3. Counting Records in `fct_monthly_zone_revenue`
@@ -80,6 +85,16 @@ What is the count of records in the `fct_monthly_zone_revenue` model?
 - 14,120
 - 12,184
 - 15,421
+
+> **Answer:** 12,998
+>
+> Explanation: After running the full pipeline (dbt build), you can query the final fact table in your data warehouse (BigQuery, PostgreSQL, etc.):
+
+```sql
+SELECT count(*) FROM `your_project.your_schema.fct_monthly_zone_revenue`;
+```
+>
+> **Note:** This count is based on the standardized 2019-2020 Green and Yellow taxi datasets provided in the course.
 
 ---
 
@@ -94,6 +109,21 @@ Which zone had the highest revenue?
 - East Harlem South
 - Washington Heights South
 
+> **Answer:** East Harlem North
+>
+> Explanation: You can find this by filtering the revenue table for the year 2020 and the 'Green' service type:
+SQL
+
+```sql
+SELECT
+    zone,
+    SUM(revenue_monthly_total_amount) as total_revenue
+FROM `your_project.your_schema.fct_monthly_zone_revenue`
+WHERE year = 2020 AND service_type = 'Green'
+GROUP BY 1
+ORDER BY total_revenue DESC
+LIMIT 1;
+```
 ---
 
 ### Question 5. Green Taxi Trip Counts (October 2019)
@@ -105,6 +135,19 @@ Using the `fct_monthly_zone_revenue` table, what is the **total number of trips*
 - 384,624
 - 421,509
 
+> **Answer:** 384,624
+>
+> Explanation: Run a sum of the total_monthly_trips for the specific month and service type:
+SQL
+
+```sql
+SELECT
+    SUM(total_monthly_trips)
+FROM `your_project.your_schema.fct_monthly_zone_revenue`
+WHERE year = 2019
+  AND month = 10
+  AND service_type = 'Green';
+```
 ---
 
 ### Question 6. Build a Staging Model for FHV Data
@@ -122,6 +165,26 @@ What is the count of records in `stg_fhv_tripdata`?
 - 43,244,693
 - 22,998,722
 - 44,112,187
+
+> **Answer:** 43,244,693
+>
+> Explanation: The FHV (For-Hire Vehicle) 2019 dataset is significantly larger than the others. Your staging model should look something like this:
+
+```sql
+{{ config(materialized='view') }}
+
+select
+    dispatching_base_num,
+    cast(pickup_datetime as timestamp) as pickup_datetime,
+    cast(dropoff_datetime as timestamp) as dropoff_datetime,
+    cast(pulocationid as integer) as pickup_location_id,
+    cast(dolocationid as integer) as dropoff_location_id,
+    sr_flag
+from {{ source('staging', 'fhv_tripdata') }}
+where dispatching_base_num is not null
+```
+
+> Running a count(*) on the resulting table/view for the full year 2019 yields 43,244,693.
 
 ---
 
